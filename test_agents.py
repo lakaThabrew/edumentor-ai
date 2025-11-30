@@ -11,7 +11,7 @@ from google import genai
 # Load environment
 load_dotenv()
 
-async def test_tutor_agent():
+async def _async_test_tutor_agent():
     """Test Tutor Agent"""
     print("\n" + "="*60)
     print("Testing Tutor Agent...")
@@ -36,9 +36,13 @@ async def test_tutor_agent():
         
     except Exception as e:
         print(f"\n❌ Tutor Agent Error: {e}")
-        return False
+        raise
 
-async def test_quiz_generator():
+
+def test_tutor_agent():
+    return asyncio.run(_async_test_tutor_agent())
+
+async def _async_test_quiz_generator():
     """Test Quiz Generator Agent"""
     print("\n" + "="*60)
     print("Testing Quiz Generator Agent...")
@@ -60,12 +64,16 @@ async def test_quiz_generator():
         print("\n✅ Quiz Generated:")
         print(quiz[:400] + "..." if len(quiz) > 400 else quiz)
         return True
-        
+
     except Exception as e:
         print(f"\n❌ Quiz Generator Error: {e}")
-        return False
+        raise
 
-async def test_progress_tracker():
+
+def test_quiz_generator():
+    return asyncio.run(_async_test_quiz_generator())
+
+async def _async_test_progress_tracker():
     """Test Progress Tracker Agent"""
     print("\n" + "="*60)
     print("Testing Progress Tracker Agent...")
@@ -92,12 +100,16 @@ async def test_progress_tracker():
         print("\n✅ Progress Report:")
         print(report[:400] + "..." if len(report) > 400 else report)
         return True
-        
+
     except Exception as e:
         print(f"\n❌ Progress Tracker Error: {e}")
-        return False
+        raise
 
-async def test_concept_explainer():
+
+def test_progress_tracker():
+    return asyncio.run(_async_test_progress_tracker())
+
+async def _async_test_concept_explainer():
     """Test Concept Explainer Agent"""
     print("\n" + "="*60)
     print("Testing Concept Explainer Agent...")
@@ -118,10 +130,14 @@ async def test_concept_explainer():
         print("\n✅ Concept Explanation:")
         print(explanation[:400] + "..." if len(explanation) > 400 else explanation)
         return True
-        
+
     except Exception as e:
         print(f"\n❌ Concept Explainer Error: {e}")
-        return False
+        raise
+
+
+def test_concept_explainer():
+    return asyncio.run(_async_test_concept_explainer())
 
 def test_memory_bank():
     """Test Memory Bank"""
@@ -147,11 +163,11 @@ def test_memory_bank():
         
         print("\n✅ Memory Bank Working")
         print(f"Context: {context}")
-        return True
-        
+        assert isinstance(context, dict)
+
     except Exception as e:
         print(f"\n❌ Memory Bank Error: {e}")
-        return False
+        raise
 
 def test_session_manager():
     """Test Session Manager"""
@@ -176,13 +192,13 @@ def test_session_manager():
         print("\n✅ Session Manager Working")
         print(f"Session ID: {session_id}")
         print(f"History: {history}")
-        return True
-        
+        assert isinstance(history, list)
+
     except Exception as e:
         print(f"\n❌ Session Manager Error: {e}")
-        return False
+        raise
 
-async def test_knowledge_tool():
+async def _async_test_knowledge_tool():
     """Test Knowledge Base Tool"""
     print("\n" + "="*60)
     print("Testing Knowledge Base Tool...")
@@ -198,51 +214,88 @@ async def test_knowledge_tool():
         print("\n✅ Knowledge Base Tool Working")
         print(f"Results: {results}")
         return True
-        
+
     except Exception as e:
         print(f"\n❌ Knowledge Base Tool Error: {e}")
-        return False
+        raise
 
-async def run_all_tests():
-    """Run all tests"""
+
+def test_knowledge_tool():
+    return asyncio.run(_async_test_knowledge_tool())
+
+def run_all_tests():
+    """Run all tests (synchronous runner that calls async tests via their wrappers)"""
     print("\n🧪 EDUMENTOR AI - COMPONENT TESTS")
     print("=" * 60)
-    
+
     # Check API key
     if not os.getenv('GOOGLE_API_KEY'):
         print("\n❌ ERROR: GOOGLE_API_KEY not found in environment")
         print("Please set it in your .env file")
         return
-    
+
     results = {}
-    
+
     # Test components
     print("\n📦 Testing Core Components...")
-    results['memory_bank'] = test_memory_bank()
-    results['session_manager'] = test_session_manager()
-    results['knowledge_tool'] = await test_knowledge_tool()
-    
-    # Test agents (async)
+    try:
+        test_memory_bank()
+        results['memory_bank'] = True
+    except Exception:
+        results['memory_bank'] = False
+
+    try:
+        test_session_manager()
+        results['session_manager'] = True
+    except Exception:
+        results['session_manager'] = False
+
+    try:
+        test_knowledge_tool()
+        results['knowledge_tool'] = True
+    except Exception:
+        results['knowledge_tool'] = False
+
+    # Test agents (sync wrappers call async coroutines internally)
     print("\n🤖 Testing AI Agents...")
-    results['tutor'] = await test_tutor_agent()
-    results['quiz_generator'] = await test_quiz_generator()
-    results['progress_tracker'] = await test_progress_tracker()
-    results['concept_explainer'] = await test_concept_explainer()
-    
+    try:
+        test_tutor_agent()
+        results['tutor'] = True
+    except Exception:
+        results['tutor'] = False
+
+    try:
+        test_quiz_generator()
+        results['quiz_generator'] = True
+    except Exception:
+        results['quiz_generator'] = False
+
+    try:
+        test_progress_tracker()
+        results['progress_tracker'] = True
+    except Exception:
+        results['progress_tracker'] = False
+
+    try:
+        test_concept_explainer()
+        results['concept_explainer'] = True
+    except Exception:
+        results['concept_explainer'] = False
+
     # Summary
     print("\n" + "="*60)
     print("TEST SUMMARY")
     print("="*60)
-    
+
     passed = sum(1 for v in results.values() if v)
     total = len(results)
-    
+
     for component, result in results.items():
         status = "✅ PASS" if result else "❌ FAIL"
         print(f"{component.replace('_', ' ').title()}: {status}")
-    
+
     print(f"\nTotal: {passed}/{total} tests passed")
-    
+
     if passed == total:
         print("\n🎉 All tests passed! You're ready to run the main application.")
         print("Run: python main.py")
@@ -250,4 +303,4 @@ async def run_all_tests():
         print("\n⚠️ Some tests failed. Please check the errors above.")
 
 if __name__ == "__main__":
-    asyncio.run(run_all_tests())
+    run_all_tests()
