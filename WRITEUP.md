@@ -1,9 +1,7 @@
 # EduMentor AI - Personalized Learning Assistant
 
-**Track:** Agents for Good (Education)
-
-**Team:** Lakmana Thabrew
-
+**Track:** Agents for Good (Education)<br>
+**Team:** Lakmana Thabrew<br>
 **Submission Date:** December 1, 2025
 
 ---
@@ -42,19 +40,19 @@ Agents are uniquely suited for education because:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    Main Orchestrator                     │
-│              (Sequential Coordination)                   │
+│                    Main Orchestrator                    │
+│              (Sequential Coordination)                  │
 └────────────┬────────────────────────────────────────────┘
              │
-    ┌────────┴────────┐
-    │                 │
+    ┌────────┴───────┐
+    │                │
 ┌───▼────┐      ┌────▼─────┐
 │ Router │      │ Session  │
 │ Logic  │      │ Manager  │
 └───┬────┘      └────┬─────┘
     │                │
-    │    ┌───────────┴──────────────┐
-    │    │                          │
+    │    ┌───────────┴─────────────┐
+    │    │                         │
 ┌───▼────▼───┐              ┌──────▼──────┐
 │  Parallel  │              │   Memory    │
 │   Agents   │◄────────────►│    Bank     │
@@ -241,26 +239,10 @@ Student: "I have a math test on quadratic equations tomorrow"
 5. **Integration**: Connect with LMS platforms (Canvas, Moodle)
 6. **A2A Protocol**: Enable collaboration with other educational agents
 
----
-
-## 🎥 Demo Video
-
-[YouTube Video Link - 3 minutes]
-
-Video includes:
-- Problem statement and motivation
-- Live demo of agent interactions
-- Architecture walkthrough
-- Real student testimonials
-- Code highlights
-
----
 
 ## 📦 Code Repository
 
-**GitHub**: [Your GitHub Repository URL]
-
-**Kaggle Notebook**: [Your Kaggle Notebook URL] (if applicable)
+**GitHub**: https://github.com/lakaThabrew/edumentor-ai
 
 ### Setup Instructions
 
