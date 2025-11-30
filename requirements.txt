@@ -1,0 +1,23 @@
+# Core Dependencies
+google-genai>=0.4.0
+python-dotenv>=1.0.0
+
+# ADK (Agent Development Kit) - if using official ADK
+# google-adk>=0.1.0  # Uncomment when official ADK is available
+
+# Async Support
+aiohttp>=3.9.0
+asyncio>=3.4.3
+
+# Data Handling
+python-dateutil>=2.8.2
+
+# Optional: For enhanced features
+# numpy>=1.24.0  # For analytics
+# pandas>=2.0.0  # For data analysis
+# plotly>=5.17.0  # For visualizations
+
+# Development Tools (optional)
+# pytest>=7.4.0  # For testing
+# black>=23.0.0  # For code formatting
+# flake8>=6.1.0  # For linting
