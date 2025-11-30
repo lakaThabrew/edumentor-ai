@@ -92,7 +92,7 @@ This project demonstrates the following ADK concepts from the 5-Day AI Agents In
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/edumentor-ai.git
+git clone https://github.com/lakaThabrew/edumentor-ai.git
 cd edumentor-ai
 ```
 
@@ -274,7 +274,7 @@ MIT License - See LICENSE file for details
 
 ## 👥 Team
 
-- **[Your Name]** - Lead Developer
+- **Lakmana Thabrew** - Lead Developer
 
 ## 🙏 Acknowledgments
 
@@ -284,9 +284,9 @@ MIT License - See LICENSE file for details
 
 ## 📧 Contact
 
-- **Email**: your-email@example.com
-- **Kaggle**: [Your Kaggle Profile]
-- **GitHub**: [Your GitHub Profile]
+- **Email**: chulankalakmana@example.com
+- **Kaggle**: [Chulanka Lakmana](https://www.kaggle.com/chulankalakmana)
+- **GitHub**: [Lakmana Thabrew](https://github.com/lakaThabrew/)
 
 ---
 
