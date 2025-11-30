@@ -6,6 +6,7 @@ Generates insights and identifies knowledge gaps
 import asyncio
 import json
 from typing import Dict, List, Optional
+from tools.error_utils import format_error
 from datetime import datetime
 from google import genai
 from google.genai import types
@@ -126,7 +127,7 @@ Want detailed analytics on a specific topic? Just ask!"""
             return report
             
         except Exception as e:
-            return f"Error generating progress report: {e}"
+            return f"Error generating progress report: {format_error(e)}"
     
     def _format_history(self, history: List[Dict]) -> str:
         """Format interaction history for analysis"""
@@ -331,7 +332,7 @@ Make it achievable, motivating, and balanced."""
             return study_plan
             
         except Exception as e:
-            return f"Error generating study plan: {e}"
+            return f"Error generating study plan: {format_error(e)}"
     
     async def calculate_mastery_score(
         self,

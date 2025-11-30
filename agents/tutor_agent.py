@@ -5,6 +5,7 @@ Uses LLM + Memory Bank for adaptive teaching
 
 import asyncio
 from typing import Optional, Dict
+from tools.error_utils import format_error
 from google import genai
 from google.genai import types
 
@@ -91,7 +92,7 @@ class TutorAgent:
             return response.text
             
         except Exception as e:
-            return f"I apologize, I'm having trouble processing that. Could you rephrase your question? Error: {e}"
+            return f"I apologize, I'm having trouble processing that. {format_error(e)}"
     
     def _build_prompt(
         self,
@@ -201,7 +202,7 @@ Hint:"""
             return f"💡 Hint: {response.text}"
             
         except Exception as e:
-            return f"Here's a thought: Try breaking the problem into smaller steps."
+            return f"Here's a thought: Try breaking the problem into smaller steps. {format_error(e)}"
     
     async def check_understanding(
         self,

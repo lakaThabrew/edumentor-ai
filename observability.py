@@ -4,6 +4,7 @@ Implements ADK observability concepts for monitoring agents
 """
 
 import logging
+import sys
 import json
 import time
 from typing import Dict, List, Optional
@@ -50,13 +51,27 @@ class ObservabilityManager:
             datefmt='%Y-%m-%d %H:%M:%S'
         )
         
-        # File handler for detailed logs
-        file_handler = logging.FileHandler(log_file)
+        # File handler for detailed logs (use UTF-8)
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(detailed_formatter)
         
         # Console handler for important logs
-        console_handler = logging.StreamHandler()
+        # Console handler should write to a UTF-8 wrapped stdout stream to avoid
+        # UnicodeEncodeError on Windows consoles that use legacy encodings.
+        try:
+            import io
+            utf8_stdout = io.TextIOWrapper(
+                sys.stdout.buffer,
+                encoding='utf-8',
+                errors='replace',
+                line_buffering=True
+            )
+        except Exception:
+            # Fallback to sys.stdout if wrapping fails
+            utf8_stdout = sys.stdout
+
+        console_handler = logging.StreamHandler(stream=utf8_stdout)
         console_handler.setLevel(logging.INFO)
         console_formatter = logging.Formatter('%(levelname)s - %(message)s')
         console_handler.setFormatter(console_formatter)

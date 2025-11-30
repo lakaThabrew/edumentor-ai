@@ -6,6 +6,7 @@ Generates quizzes based on student level and topic
 import asyncio
 import json
 from typing import List, Dict, Optional
+from tools.error_utils import format_error
 from google import genai
 from google.genai import types
 
@@ -119,7 +120,7 @@ Difficulty: {difficulty.upper()}
             return formatted_quiz
             
         except Exception as e:
-            return f"Error generating quiz: {e}"
+            return f"Error generating quiz: {format_error(e)}"
     
     async def generate_single_question(
         self,
@@ -173,7 +174,7 @@ For problem_solving: include step-by-step solution in explanation"""
         except Exception as e:
             print(f"Error generating single question: {e}")
             return {
-                "question": f"Error generating question: {e}",
+                "question": f"Error generating question: {format_error(e)}",
                 "error": True
             }
     
@@ -231,7 +232,7 @@ Be encouraging and educational in your feedback."""
             print(f"Error evaluating answer: {e}")
             return {
                 "score": 0,
-                "feedback": f"Error evaluating: {e}",
+                "feedback": format_error(e),
                 "hint": "Please try again",
                 "is_correct": False
             }
@@ -311,7 +312,7 @@ Be encouraging and educational in your feedback."""
                 )
                 practice_set += quiz + "\n"
             except Exception as e:
-                practice_set += f"Error generating questions for {topic}: {e}\n\n"
+                practice_set += f"Error generating questions for {topic}: {format_error(e)}\n\n"
         
         return practice_set
     
@@ -364,7 +365,7 @@ Make them educational, clear, and helpful for memorization."""
             print(f"Error creating flashcards: {e}")
             return [{
                 "front": "Error",
-                "back": f"Error creating flashcards: {e}",
+                "back": f"Error creating flashcards: {format_error(e)}",
                 "hint": ""
             }]
     

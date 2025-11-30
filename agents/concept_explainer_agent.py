@@ -5,6 +5,7 @@ Breaks down complex concepts into digestible pieces
 
 import asyncio
 from typing import Optional, List
+from tools.error_utils import format_error
 from google import genai
 from google.genai import types
 
@@ -123,7 +124,7 @@ Make it engaging, clear, and easy to understand!"""
             return explanation
             
         except Exception as e:
-            return f"Error explaining concept: {e}"
+            return f"Error explaining concept: {format_error(e)}"
     
     async def create_analogy(
         self,
@@ -174,7 +175,7 @@ Make it creative and helpful!"""
             return f"🌟 ANALOGY:\n\n{response.text}"
             
         except Exception as e:
-            return f"Error creating analogy: {e}"
+            return f"Error creating analogy: {format_error(e)}"
     
     async def break_down_steps(self, process: str) -> str:
         """
@@ -210,7 +211,7 @@ Make it actionable and easy to follow."""
             return f"📋 STEP-BY-STEP GUIDE: {process}\n\n{response.text}"
             
         except Exception as e:
-            return f"Error breaking down steps: {e}"
+            return f"Error breaking down steps: {format_error(e)}"
     
     async def explain_with_examples(
         self,
@@ -258,7 +259,7 @@ Make each example distinct and illustrative."""
 """
             
         except Exception as e:
-            return f"Error generating examples: {e}"
+            return f"Error generating examples: {format_error(e)}"
     
     async def create_visual_description(
         self,
@@ -297,7 +298,7 @@ Help the student create a strong mental image. Use vivid, descriptive language."
             return f"👁️ VISUAL DESCRIPTION:\n\n{response.text}"
             
         except Exception as e:
-            return f"Error creating visual description: {e}"
+            return f"Error creating visual description: {format_error(e)}"
     
     async def address_misconceptions(
         self,
@@ -344,7 +345,7 @@ Help students avoid these pitfalls."""
 """
             
         except Exception as e:
-            return f"Error addressing misconceptions: {e}"
+            return f"Error addressing misconceptions: {format_error(e)}"
     
     async def create_concept_map(
         self,
@@ -396,4 +397,4 @@ Make the relationships clear and educational."""
 """
             
         except Exception as e:
-            return f"Error creating concept map: {e}"
+            return f"Error creating concept map: {format_error(e)}"
