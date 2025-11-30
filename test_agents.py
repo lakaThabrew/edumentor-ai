@@ -182,7 +182,7 @@ def test_session_manager():
         print(f"\n❌ Session Manager Error: {e}")
         return False
 
-def test_knowledge_tool():
+async def test_knowledge_tool():
     """Test Knowledge Base Tool"""
     print("\n" + "="*60)
     print("Testing Knowledge Base Tool...")
@@ -192,13 +192,8 @@ def test_knowledge_tool():
         from tools.knowledge_base_tool import KnowledgeBaseTool
         
         tool = KnowledgeBaseTool()
-        
-        # Test retrieval (sync wrapper for async)
-        async def test():
-            results = await tool.retrieve("photosynthesis")
-            return results
-        
-        results = asyncio.run(test())
+        # Test retrieval (await async method directly)
+        results = await tool.retrieve("photosynthesis")
         
         print("\n✅ Knowledge Base Tool Working")
         print(f"Results: {results}")
@@ -225,7 +220,7 @@ async def run_all_tests():
     print("\n📦 Testing Core Components...")
     results['memory_bank'] = test_memory_bank()
     results['session_manager'] = test_session_manager()
-    results['knowledge_tool'] = test_knowledge_tool()
+    results['knowledge_tool'] = await test_knowledge_tool()
     
     # Test agents (async)
     print("\n🤖 Testing AI Agents...")
