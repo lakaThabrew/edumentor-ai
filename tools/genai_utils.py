@@ -1,3 +1,7 @@
+"""
+GenAI Utilities - Simplified async wrapper for Google GenAI API
+"""
+
 import asyncio
 from typing import Any
 from google.genai import types
@@ -5,186 +9,115 @@ from google.genai import types
 
 async def async_chat(client: Any, model: str, system_prompt: str, user_prompt: str,
                      temperature: float = 0.7, max_output_tokens: int = 800) -> str:
-    """Call GenAI chat.create in a thread and return a best-effort text result.
+    """Call GenAI models.generate_content in a thread and return the text result.
 
-    This helper wraps the synchronous client.chat.create in asyncio.to_thread and
-    attempts several common response shapes to extract a sensible text string.
+    Args:
+        client: GenAI Client instance
+        model: Model name (e.g., 'gemini-2.0-flash')
+        system_prompt: System instruction for the model
+        user_prompt: User's query/prompt
+        temperature: Sampling temperature (0.0 to 1.0)
+        max_output_tokens: Maximum tokens in response
+
+    Returns:
+        Generated text response from the model
     """
-    # Build a combined prompt for clients that accept a single string input
-    full_prompt = "".join([p for p in [system_prompt, "\n\n", user_prompt] if p])
-
-    # Try multiple client APIs in a best-effort order
-    # 1) Preferred: client.chats.create(...) (some versions expose `chats`)
-    if hasattr(client, "chats") and hasattr(client.chats, "create"):
+    
+    # Use client.models.generate_content (modern google-genai SDK)
+    if hasattr(client, "models") and hasattr(client.models, "generate_content"):
         try:
+            # Build configuration
+            config_kwargs = {
+                "temperature": temperature,
+                "max_output_tokens": max_output_tokens,
+            }
+            if system_prompt:
+                config_kwargs["system_instruction"] = system_prompt
+            
+            cfg = types.GenerateContentConfig(**config_kwargs)
+            
+            # Call generate_content in a thread to not block async loop
             response = await asyncio.to_thread(
-                client.chats.create,
+                client.models.generate_content,
                 model=model,
-                messages=[
-                    {"author": "system", "content": system_prompt or ""},
-                    {"author": "user", "content": user_prompt or ""},
-                ],
-                temperature=temperature,
-                max_output_tokens=max_output_tokens,
+                contents=user_prompt,
+                config=cfg,
             )
-            return _extract_response_text(response)
+            
+            # Extract text from response
+            text = _extract_response_text(response)
+            if text:
+                return text
+            
+            # If no text extracted, return diagnostic
+            return (
+                "[No model output captured] The API call succeeded but no text was returned. "
+                "Check your API key and model name."
+            )
         except Exception as e:
-            # If the client supports chats.create but it failed at runtime,
-            # surface the real error instead of silently falling back.
+            # Re-raise the exception to be handled by caller
             raise
 
-    # Also try singular chat.create if present
-    if hasattr(client, "chat") and hasattr(client.chat, "create"):
-        try:
-            response = await asyncio.to_thread(
-                client.chat.create,
-                model=model,
-                messages=[
-                    {"author": "system", "content": system_prompt or ""},
-                    {"author": "user", "content": user_prompt or ""},
-                ],
-                temperature=temperature,
-                max_output_tokens=max_output_tokens,
-            )
-            return _extract_response_text(response)
-        except Exception as e:
-            # Surface runtime errors from a supported API
-            raise
-
-    # 2) Older simpler APIs that accept a single prompt string
-    # try client.generate_text
-    if hasattr(client, "generate_text"):
-        try:
-            response = await asyncio.to_thread(
-                client.generate_text,
-                model=model,
-                prompt=full_prompt,
-                temperature=temperature,
-                max_output_tokens=max_output_tokens,
-            )
-            return _extract_response_text(response)
-        except Exception as e:
-            raise
-
-    # 3) generic client.generate
-    if hasattr(client, "generate"):
-        try:
-            response = await asyncio.to_thread(
-                client.generate,
-                model=model,
-                prompt=full_prompt,
-                temperature=temperature,
-                max_output_tokens=max_output_tokens,
-            )
-            return _extract_response_text(response)
-        except Exception as e:
-            raise
-
-    # 4) client.models.generate_text or client.models.generate_content
-    models_ns = getattr(client, "models", None)
-    if models_ns is not None:
-        # try generate_text
-        if hasattr(models_ns, "generate_text"):
-            try:
-                response = await asyncio.to_thread(
-                    models_ns.generate_text,
-                    model=model,
-                    prompt=full_prompt,
-                    temperature=temperature,
-                    max_output_tokens=max_output_tokens,
-                )
-                return _extract_response_text(response)
-            except Exception as e:
-                raise
-
-        # try generate_content (legacy) with 'contents' arg
-        if hasattr(models_ns, "generate_content"):
-            try:
-                # Use GenerateContentConfig when available to pass temperature/max tokens
-                cfg = types.GenerateContentConfig(
-                    temperature=temperature,
-                    max_output_tokens=max_output_tokens,
-                )
-                response = await asyncio.to_thread(
-                    models_ns.generate_content,
-                    model=model,
-                    contents=full_prompt,
-                    config=cfg,
-                )
-                return _extract_response_text(response)
-            except Exception as e:
-                raise
-
-    # If we reach here, none of the known client methods worked
-    raise AttributeError("No supported text-generation method found on provided client")
+    # If we reach here, the client doesn't have the expected API
+    raise AttributeError("No supported text-generation method found on provided client. "
+                         "Ensure you're using google-genai >= 0.4.0")
 
 
 def _extract_response_text(response: Any) -> str:
-    """Try multiple common response shapes to return a text string.
+    """Extract text from GenAI response object.
 
-    The GenAI client and response objects change between releases; this helper
-    inspects likely attributes in order and falls back to str(response).
+    The GenAI response objects may have different structures; this helper
+    tries multiple common patterns to extract the generated text.
+    
+    Args:
+        response: Response object from generate_content
+        
+    Returns:
+        Extracted text string, or empty string if extraction fails
     """
-    # 1) direct simple text attribute
+    # 1) Direct .text attribute (most common for GenerateContentResponse)
     try:
-        if hasattr(response, "text") and isinstance(response.text, str):
+        if hasattr(response, "text") and response.text:
             return response.text
     except Exception:
         pass
 
-    # 2) output_text (sometimes present)
+    # 2) candidates[0].content.parts[0].text (detailed response structure)
     try:
-        if hasattr(response, "output_text") and isinstance(response.output_text, str):
+        if hasattr(response, "candidates") and response.candidates:
+            candidate = response.candidates[0]
+            if hasattr(candidate, "content") and candidate.content:
+                content = candidate.content
+                if hasattr(content, "parts") and content.parts:
+                    for part in content.parts:
+                        if hasattr(part, "text") and part.text:
+                            return part.text
+    except Exception:
+        pass
+
+    # 3) Check for parts directly on response
+    try:
+        if hasattr(response, "parts") and response.parts:
+            for part in response.parts:
+                if hasattr(part, "text") and part.text:
+                    return part.text
+    except Exception:
+        pass
+
+    # 4) output_text attribute (some versions)
+    try:
+        if hasattr(response, "output_text") and response.output_text:
             return response.output_text
     except Exception:
         pass
 
-    # 3) choices -> message -> content
+    # 5) Last resort: stringify the response
     try:
-        choices = getattr(response, "choices", None)
-        if choices:
-            first = choices[0]
-            # message could be a string or object
-            msg = getattr(first, "message", None)
-            if isinstance(msg, str):
-                return msg
-            if msg is not None:
-                content = getattr(msg, "content", None)
-                if isinstance(content, str):
-                    return content
-                if isinstance(content, list) and content:
-                    c0 = content[0]
-                    if isinstance(c0, str):
-                        return c0
-                    if isinstance(c0, dict):
-                        return c0.get("text") or c0.get("content") or str(c0)
-                    if hasattr(c0, "text"):
-                        return getattr(c0, "text")
+        result = str(response)
+        # Avoid returning object repr strings
+        if result and not result.startswith("<"):
+            return result
     except Exception:
         pass
 
-    # 4) output -> content list
-    try:
-        output = getattr(response, "output", None)
-        if output and len(output) > 0:
-            first = output[0]
-            if isinstance(first, dict):
-                cont = first.get("content")
-                if isinstance(cont, str):
-                    return cont
-                if isinstance(cont, list) and cont:
-                    c0 = cont[0]
-                    if isinstance(c0, str):
-                        return c0
-                    if isinstance(c0, dict):
-                        return c0.get("text") or c0.get("content") or str(c0)
-                    if hasattr(c0, "text"):
-                        return getattr(c0, "text")
-    except Exception:
-        pass
-
-    # Last resort
-    try:
-        return str(response)
-    except Exception:
-        return ""
+    return ""
