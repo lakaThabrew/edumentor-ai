@@ -29,7 +29,7 @@ class ProgressTrackerAgent:
         """
         self.client = client
         self.memory_bank = memory_bank
-        self.model_name = 'models/gemini-1.5-flash'
+        self.model_name = 'gemini-2.0-flash'
         
     async def analyze_progress(self, student_id: str) -> str:
         """

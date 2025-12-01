@@ -6,6 +6,7 @@ Coordinates the multi-agent educational system
 import os
 import asyncio
 import sys
+import argparse
 from typing import Dict, List, Any
 from dotenv import load_dotenv
 import re
@@ -122,19 +123,14 @@ class OrchestratorAgent:
                 tutor_task = asyncio.create_task(
                     self.tutor.teach(f"Provide study tips for: {query}", student_id)
                 )
-                quiz = asyncio.create_task(...)
-                tutor_response = asyncio.create_task(...)
-
-                done, pending = await asyncio.wait(
-                        {quiz, tutor_response}, 
-                        return_when=asyncio.ALL_COMPLETED
-                )
-
-                # cancel leftover tasks
-                for p in pending:
-                    p.cancel()
-
-                response = f"{tutor_response}\n\n{quiz}"
+                
+                # Wait for both tasks to complete
+                results = await asyncio.gather(quiz_task, tutor_task, return_exceptions=True)
+                
+                quiz = results[0] if not isinstance(results[0], Exception) else f"Quiz error: {results[0]}"
+                tutor_response = results[1] if not isinstance(results[1], Exception) else f"Tutor error: {results[1]}"
+                
+                response = f"{tutor_response}\n\n{'='*60}\n📝 PRACTICE QUIZ\n{'='*60}\n\n{quiz}"
                 
             elif intent == "progress":
                 # Progress tracking (single agent)
@@ -242,7 +238,7 @@ Intent (ONE WORD ONLY):"""
         try:
             response_text = await async_chat(
                 self.client,
-                'models/gemini-1.5-flash-latest',
+                'gemini-2.0-flash',
                 "",
                 prompt,
                 temperature=0.3,
@@ -439,11 +435,16 @@ I can assist you with:
 
 async def main():
     """Main entry point for EduMentor AI"""
-    
     print("\n" + "=" * 60)
     print("🚀 Starting EduMentor AI...")
     print("=" * 60 + "\n")
-    
+
+    # Allow non-interactive mode via CLI args for automated runs/tests
+    parser = argparse.ArgumentParser(description="EduMentor AI runner")
+    parser.add_argument('--student-id', dest='student_id', help='Student ID to use for the session', default=None)
+    parser.add_argument('--prompt', dest='prompt', help='Single query to route (non-interactive)', default=None)
+    args = parser.parse_args()
+
     try:
         # Check for API key
         api_key = os.getenv('GOOGLE_API_KEY')
@@ -457,15 +458,34 @@ async def main():
             print("  GOOGLE_API_KEY=your_actual_api_key_here")
             print()
             return
-        
+
         # Initialize orchestrator (this initializes all agents)
         orchestrator = OrchestratorAgent()
-        
-        # Run interactive mode
+
+        # If both CLI args provided, run a single automated session and exit
+        if args.student_id and args.prompt:
+            student_id = str(args.student_id)
+            query = str(args.prompt)
+
+            # Start or restore a session for the student
+            greeting = await orchestrator.start_learning_session(student_id)
+            print(greeting)
+
+            session_id = orchestrator.session_manager.get_current_session(student_id)
+            print(f"\n💬 Running automated query for student {student_id}: {query}\n")
+
+            # Route the single query and print response
+            response = await orchestrator.route_query(query, student_id, session_id)
+
+            print(f"\n🤖 EduMentor (automated):\n{"─"*60}\n{response}\n{"─"*60}")
+            print("\n✅ Automated run completed")
+            return
+
+        # Otherwise run interactive mode
         await orchestrator.interactive_mode()
-        
+
         print("\n✅ Session ended successfully")
-        
+
     except ValueError as e:
         print(f"\n❌ Configuration Error: {e}")
         print("\nPlease check your .env file and ensure GOOGLE_API_KEY is set correctly.")

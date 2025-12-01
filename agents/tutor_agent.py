@@ -27,7 +27,7 @@ class TutorAgent:
         """
         self.client = client
         self.memory_bank = memory_bank
-        self.model_name = 'models/gemini-1.5-flash-latest'
+        self.model_name = 'gemini-2.0-flash'
         
         # Import here to avoid circular imports
         import sys

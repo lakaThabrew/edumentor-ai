@@ -25,7 +25,7 @@ class ConceptExplainerAgent:
             client: GenAI client
         """
         self.client = client
-        self.model_name = 'models/gemini-1.5-pro'
+        self.model_name = 'gemini-2.0-flash'
         
     async def explain(
         self,
