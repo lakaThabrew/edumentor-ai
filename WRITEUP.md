@@ -135,6 +135,14 @@ Agents are uniquely suited for education because:
 - Learning path tracking
 - Progress checkpoints
 
+#### 7. Graphical User Interface ✅
+- **Tkinter-based GUI**: User-friendly desktop interface
+- **Modern Dark Theme**: Comfortable for extended study sessions
+- **Session Management**: Easy start/end session with student ID
+- **Quick Actions**: One-click buttons for progress, quizzes, and help
+- **Real-time Feedback**: Visual status indicators during processing
+- **Markdown Rendering**: Clean display of formatted AI responses
+
 ### Technology Stack
 
 - **Framework**: Google ADK (Agent Development Kit) - Python
@@ -142,6 +150,7 @@ Agents are uniquely suited for education because:
 - **Tools**: MCP for knowledge retrieval, custom Python tools
 - **Storage**: In-memory with JSON persistence
 - **Observability**: Python logging + custom tracing
+- **GUI**: Tkinter with custom dark theme styling
 
 ---
 
@@ -258,8 +267,11 @@ pip install -r requirements.txt
 cp .env.example .env
 # Add your GOOGLE_API_KEY to .env
 
-# Run the agent
+# Run the agent (CLI mode)
 python main.py
+
+# Or run with graphical interface
+python gui.py
 ```
 
 
