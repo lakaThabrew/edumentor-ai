@@ -6,6 +6,7 @@ Uses LLM + Memory Bank for adaptive teaching
 import asyncio
 from typing import Optional, Dict
 from tools.error_utils import format_error
+from tools.genai_utils import async_chat
 from google import genai
 from google.genai import types
 
@@ -26,7 +27,7 @@ class TutorAgent:
         """
         self.client = client
         self.memory_bank = memory_bank
-        self.model_name = 'gemini-2.0-flash-exp'
+        self.model_name = 'models/gemini-1.5-flash-latest'
         
         # Import here to avoid circular imports
         import sys
@@ -67,7 +68,7 @@ class TutorAgent:
                 knowledge = await self.knowledge_tool.retrieve(query)
             except Exception as e:
                 print(f"Knowledge retrieval error: {e}")
-                knowledge = "Using general knowledge."
+                knowledge = "Using general knowledge." or "No additional knowledge found."
         
         # Build personalized prompt
         prompt = self._build_prompt(
@@ -79,18 +80,15 @@ class TutorAgent:
         
         # Generate response
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.7,  # Balanced creativity for teaching
-                    max_output_tokens=1000,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.7,
+                max_output_tokens=1000,
             )
-            
-            return response.text
-            
+            return response_text
         except Exception as e:
             return f"I apologize, I'm having trouble processing that. {format_error(e)}"
     
@@ -102,7 +100,8 @@ class TutorAgent:
         context: Optional[str]
     ) -> str:
         """Build personalized teaching prompt"""
-        
+
+        student_profile = student_profile or {}
         level = student_profile.get('level', 'intermediate')
         strengths = student_profile.get('strengths', [])
         gaps = student_profile.get('gaps', [])
@@ -189,18 +188,15 @@ The hint should:
 Hint:"""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.6,
-                    max_output_tokens=200,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.7,
+                max_output_tokens=1000,
             )
-            
-            return f"💡 Hint: {response.text}"
-            
+            return f"💡 Hint: {response_text}"
         except Exception as e:
             return f"Here's a thought: Try breaking the problem into smaller steps. {format_error(e)}"
     
@@ -234,17 +230,14 @@ Assess their understanding and provide:
 Be supportive and use the Socratic method."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.7,
-                    max_output_tokens=500,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.7,
+                max_output_tokens=1000,
             )
-            
-            return response.text
-            
+            return response_text
         except Exception as e:
             return "That's an interesting thought! Can you tell me more about why you think that?"

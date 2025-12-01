@@ -33,4 +33,4 @@ def format_error(exc: Exception) -> str:
 
     # Fallback: show a short generic error message
     # Avoid including full exception text which may contain sensitive or verbose info
-    return "An internal error occurred while processing your request. Please try again or rephrase your question."
+    return "An internal error occurred while processing your request. Please try again or rephrase your question." + text[:100]  # Include first 100 chars for context
