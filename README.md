@@ -132,6 +132,32 @@ This starts an interactive session where you can:
 - Get concept explanations
 - Check your learning progress
 
+### Graphical User Interface (GUI)
+
+```bash
+python gui.py
+```
+
+EduMentor AI includes a user-friendly graphical interface built with Tkinter:
+
+**Features:**
+- 🎨 **Modern Dark Theme** - Easy on the eyes for long study sessions
+- 💬 **Chat Interface** - Intuitive conversation-style interaction
+- 👤 **Session Management** - Start and end learning sessions with your student ID
+- ⚡ **Quick Action Buttons** - One-click access to common actions:
+  - 📊 Check Progress - View your learning analytics
+  - 📝 Get Quiz - Generate adaptive practice problems
+  - 💡 Help - Get assistance with the system
+- 📜 **Chat History** - Scrollable conversation display with markdown formatting
+- 🔄 **Real-time Status** - Visual feedback during AI processing
+
+**Getting Started with GUI:**
+1. Launch the GUI with `python gui.py`
+2. Enter your Student ID in the input field
+3. Click "Start Session" to begin
+4. Type your questions in the message box or use quick action buttons
+5. Click "End Session" when finished to save your progress
+
 ### Example Interactions
 
 **Homework Help:**
@@ -160,26 +186,27 @@ Topics Mastered: Algebra basics, Cell biology...
 
 ```
 edumentor-ai/
-├── main.py                    # Main orchestrator
+├── main.py             # Main orchestrator (CLI)
+├── gui.py             # Graphical user interface
 ├── agents/
 │   ├── tutor_agent.py        # Socratic tutoring
 │   ├── quiz_generator_agent.py
 │   ├── progress_tracker_agent.py
 │   └── concept_explainer_agent.py
 ├── tools/
-│   ├── knowledge_base_tool.py    # MCP integration
-│   ├── assessment_tool.py        # Custom grading
+│   ├── knowledge_base_tool.py  # MCP integration
+│   ├── assessment_tool.py      # Custom grading
 │   └── progress_storage_tool.py
 ├── config/
 │   ├── agent_config.py
 │   └── prompts.py
 ├── memory_bank.py             # Long-term memory
 ├── session_manager.py         # Session state
-├── observability.py           # Logging & metrics
+├── observability.py         # Logging & metrics
 ├── requirements.txt
 ├── .env.example
 ├── README.md
-└── WRITEUP.md                 # Competition submission
+└── WRITEUP.md         # Competition submission
 ```
 
 ## 🧪 Testing
