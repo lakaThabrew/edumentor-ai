@@ -7,6 +7,7 @@ import asyncio
 import json
 from typing import Dict, List, Optional
 from tools.error_utils import format_error
+from tools.genai_utils import async_chat
 from datetime import datetime
 from google import genai
 from google.genai import types
@@ -28,7 +29,7 @@ class ProgressTrackerAgent:
         """
         self.client = client
         self.memory_bank = memory_bank
-        self.model_name = 'gemini-2.0-flash-exp'
+        self.model_name = 'models/gemini-1.5-flash'
         
     async def analyze_progress(self, student_id: str) -> str:
         """
@@ -103,20 +104,19 @@ Create a detailed progress report with:
 Make it personal, encouraging, and actionable. Use emojis where appropriate."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.6,
-                    max_output_tokens=1200,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.6,
+                max_output_tokens=1200,
             )
-            
+
             report = f"""📊 PROGRESS REPORT - {datetime.now().strftime('%B %d, %Y')}
 {'=' * 60}
 
-{response.text}
+{response_text}
 
 {'=' * 60}
 📈 Total Sessions: {len(history)}
@@ -125,7 +125,6 @@ Make it personal, encouraging, and actionable. Use emojis where appropriate."""
 Want detailed analytics on a specific topic? Just ask!"""
 
             return report
-            
         except Exception as e:
             return f"Error generating progress report: {format_error(e)}"
     
@@ -183,18 +182,16 @@ Focus on:
 Return only the JSON array, no other text."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.3,
-                    max_output_tokens=300,
-                    response_mime_type="application/json"
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.3,
+                max_output_tokens=300,
             )
             
-            gaps = json.loads(response.text)
+            gaps = json.loads(response_text)
             
             # Validate it's a list
             if isinstance(gaps, list):
@@ -241,18 +238,16 @@ Focus on:
 Return only the JSON array, no other text."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.3,
-                    max_output_tokens=300,
-                    response_mime_type="application/json"
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.3,
+                max_output_tokens=300,
             )
             
-            strengths = json.loads(response.text)
+            strengths = json.loads(response_text)
             
             if isinstance(strengths, list):
                 # Update profile with strengths
@@ -311,26 +306,24 @@ Create a day-by-day plan with:
 Make it achievable, motivating, and balanced."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.7,
-                    max_output_tokens=1200,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.7,
+                max_output_tokens=1200,
             )
             
             study_plan = f"""📅 PERSONALIZED {duration_days}-DAY STUDY PLAN
 {'=' * 60}
 
-{response.text}
+{response_text}
 
 {'=' * 60}
 💡 Remember: Consistency is key! Even 20 minutes daily makes a difference.
 """
             return study_plan
-            
         except Exception as e:
             return f"Error generating study plan: {format_error(e)}"
     

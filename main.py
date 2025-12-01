@@ -8,6 +8,7 @@ import asyncio
 import sys
 from typing import Dict, List, Any
 from dotenv import load_dotenv
+import re
 
 # Load environment variables first
 load_dotenv()
@@ -15,6 +16,7 @@ load_dotenv()
 # ADK Imports
 from google import genai
 from google.genai import types
+from tools.genai_utils import async_chat
 
 # Local imports
 from agents.tutor_agent import TutorAgent
@@ -24,7 +26,6 @@ from agents.concept_explainer_agent import ConceptExplainerAgent
 from session_manager import SessionManager
 from memory_bank import MemoryBank
 from observability import ObservabilityManager
-
 
 class OrchestratorAgent:
     """
@@ -121,7 +122,18 @@ class OrchestratorAgent:
                 tutor_task = asyncio.create_task(
                     self.tutor.teach(f"Provide study tips for: {query}", student_id)
                 )
-                quiz, tutor_response = await asyncio.gather(quiz_task, tutor_task)
+                quiz = asyncio.create_task(...)
+                tutor_response = asyncio.create_task(...)
+
+                done, pending = await asyncio.wait(
+                        {quiz, tutor_response}, 
+                        return_when=asyncio.ALL_COMPLETED
+                )
+
+                # cancel leftover tasks
+                for p in pending:
+                    p.cancel()
+
                 response = f"{tutor_response}\n\n{quiz}"
                 
             elif intent == "progress":
@@ -228,25 +240,25 @@ Return ONLY ONE WORD from these options:
 Intent (ONE WORD ONLY):"""
         
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model='gemini-2.0-flash-exp',
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.3,  # Low temperature for consistent classification
-                    max_output_tokens=10,
-                )
+            response_text = await async_chat(
+                self.client,
+                'models/gemini-1.5-flash-latest',
+                "",
+                prompt,
+                temperature=0.3,
+                max_output_tokens=10,
             )
-            intent = response.text.strip().lower()
-            
+
+            intent = response_text.strip()
+
             # Validate intent
-            valid_intents = ['explanation', 'practice', 'progress', 'homework', 'general']
-            if intent not in valid_intents:
-                self.logger.warning(f"Invalid intent '{intent}', defaulting to 'general'")
+            m = re.search(r'(explanation|practice|progress|homework|general)', response_text.lower())
+            if m:
+                intent = m.group(1)
+            else:
                 intent = 'general'
-                
+
             return intent
-            
         except Exception as e:
             self.logger.error(f"Error determining intent: {e}")
             return 'general'
@@ -261,7 +273,8 @@ Intent (ONE WORD ONLY):"""
         Returns:
             Greeting message
         """
-        session_id = self.session_manager.create_session(student_id)
+        session_id = self.session_manager.get_current_session(student_id) or \
+             self.session_manager.create_session(student_id)
         self.logger.info(f"Started session {session_id} for student {student_id}")
         
         # Increment session count in progress storage

@@ -6,6 +6,7 @@ Breaks down complex concepts into digestible pieces
 import asyncio
 from typing import Optional, List
 from tools.error_utils import format_error
+from tools.genai_utils import async_chat
 from google import genai
 from google.genai import types
 
@@ -24,7 +25,7 @@ class ConceptExplainerAgent:
             client: GenAI client
         """
         self.client = client
-        self.model_name = 'gemini-2.0-flash-exp'
+        self.model_name = 'models/gemini-1.5-pro'
         
     async def explain(
         self,
@@ -102,27 +103,25 @@ Provide a comprehensive explanation with these sections:
 Make it engaging, clear, and easy to understand!"""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.7,
-                    max_output_tokens=1200,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                system_prompt,
+                prompt,
+                temperature=0.7,
+                max_output_tokens=1200,
             )
-            
+
             explanation = f"""
 🔍 CONCEPT EXPLANATION: {concept}
 {'=' * 60}
 
-{response.text}
+{response_text}
 
 {'=' * 60}
 💡 Need more help? Feel free to ask follow-up questions!
 """
             return explanation
-            
         except Exception as e:
             return f"Error explaining concept: {format_error(e)}"
     
@@ -162,18 +161,16 @@ Provide:
 Make it creative and helpful!"""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.8,  # Higher creativity for analogies
-                    max_output_tokens=500,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.8,
+                max_output_tokens=500,
             )
-            
-            return f"🌟 ANALOGY:\n\n{response.text}"
-            
+
+            return f"🌟 ANALOGY:\n\n{response_text}"
         except Exception as e:
             return f"Error creating analogy: {format_error(e)}"
     
@@ -198,18 +195,16 @@ Number each step clearly and keep explanations concise but complete.
 Make it actionable and easy to follow."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.5,
-                    max_output_tokens=800,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.5,
+                max_output_tokens=800,
             )
-            
-            return f"📋 STEP-BY-STEP GUIDE: {process}\n\n{response.text}"
-            
+
+            return f"📋 STEP-BY-STEP GUIDE: {process}\n\n{response_text}"
         except Exception as e:
             return f"Error breaking down steps: {format_error(e)}"
     
@@ -239,25 +234,23 @@ Progress from simple to more complex examples.
 Make each example distinct and illustrative."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.7,
-                    max_output_tokens=1000,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.7,
+                max_output_tokens=1000,
             )
-            
+
             return f"""
 📚 LEARNING THROUGH EXAMPLES: {concept}
 {'=' * 60}
 
-{response.text}
+{response_text}
 
 {'=' * 60}
 """
-            
         except Exception as e:
             return f"Error generating examples: {format_error(e)}"
     
@@ -285,18 +278,16 @@ Describe:
 Help the student create a strong mental image. Use vivid, descriptive language."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.8,
-                    max_output_tokens=600,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.8,
+                max_output_tokens=600,
             )
-            
-            return f"👁️ VISUAL DESCRIPTION:\n\n{response.text}"
-            
+
+            return f"👁️ VISUAL DESCRIPTION:\n\n{response_text}"
         except Exception as e:
             return f"Error creating visual description: {format_error(e)}"
     
@@ -325,25 +316,23 @@ List 3-5 common misconceptions.
 Help students avoid these pitfalls."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.6,
-                    max_output_tokens=800,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.8,
+                max_output_tokens=600,
             )
-            
+
             return f"""
 ⚠️ COMMON MISCONCEPTIONS: {concept}
 {'=' * 60}
 
-{response.text}
+{response_text}
 
 {'=' * 60}
 """
-            
         except Exception as e:
             return f"Error addressing misconceptions: {format_error(e)}"
     
@@ -377,24 +366,22 @@ Format as a clear text-based diagram using indentation and arrows (→).
 Make the relationships clear and educational."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.6,
-                    max_output_tokens=600,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.6,
+                max_output_tokens=600,
             )
-            
+
             return f"""
 🗺️ CONCEPT MAP: {main_concept}
 {'=' * 60}
 
-{response.text}
+{response_text}
 
 {'=' * 60}
 """
-            
         except Exception as e:
             return f"Error creating concept map: {format_error(e)}"

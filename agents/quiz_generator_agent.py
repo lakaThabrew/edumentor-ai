@@ -7,6 +7,7 @@ import asyncio
 import json
 from typing import List, Dict, Optional
 from tools.error_utils import format_error
+from tools.genai_utils import async_chat
 from google import genai
 from google.genai import types
 
@@ -25,7 +26,7 @@ class QuizGeneratorAgent:
             client: GenAI client
         """
         self.client = client
-        self.model_name = 'gemini-2.0-flash-exp'
+        self.model_name = 'models/gemini-1.5-pro'
         
     async def generate_quiz(
         self,
@@ -94,17 +95,14 @@ At the end, provide an ANSWER KEY with:
 Make it educational and engaging!"""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.8,  # Higher creativity for varied questions
-                    max_output_tokens=1500,
-                )
+            quiz_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.8,
+                max_output_tokens=1500,
             )
-            
-            quiz_text = response.text
             
             # Format nicely
             formatted_quiz = f"""
@@ -157,18 +155,16 @@ For short_answer: omit options field
 For problem_solving: include step-by-step solution in explanation"""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.8,
-                    max_output_tokens=500,
-                    response_mime_type="application/json"
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.8,
+                max_output_tokens=500,
             )
             
-            question_data = json.loads(response.text)
+            question_data = json.loads(response_text)
             return question_data
             
         except Exception as e:
@@ -214,18 +210,16 @@ Provide evaluation as JSON:
 Be encouraging and educational in your feedback."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=eval_prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.3,  # Lower temp for consistent grading
-                    max_output_tokens=500,
-                    response_mime_type="application/json"
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                eval_prompt,
+                temperature=0.3,
+                max_output_tokens=500,
             )
             
-            evaluation = json.loads(response.text)
+            evaluation = json.loads(response_text)
             return evaluation
             
         except Exception as e:
@@ -347,18 +341,16 @@ Return as JSON array:
 Make them educational, clear, and helpful for memorization."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.7,
-                    max_output_tokens=1500,
-                    response_mime_type="application/json"
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.7,
+                max_output_tokens=1500,
             )
             
-            flashcards = json.loads(response.text)
+            flashcards = json.loads(response_text)
             return flashcards
             
         except Exception as e:
@@ -410,14 +402,13 @@ Problem 2: [step-by-step solution]
 ..."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.8,
-                    max_output_tokens=1200,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.8,
+                max_output_tokens=1200,
             )
             
             word_problems = f"""
@@ -425,7 +416,7 @@ Problem 2: [step-by-step solution]
 Difficulty: {difficulty.upper()}
 {'=' * 60}
 
-{response.text}
+{response_text}
 
 {'=' * 60}
 💡 Show your work and explain your reasoning!
@@ -468,25 +459,23 @@ ANSWER KEY:
 ..."""
 
         try:
-            response = await asyncio.to_thread(
-                self.client.models.generate_content,
-                model=self.model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    temperature=0.7,
-                    max_output_tokens=1000,
-                )
+            response_text = await async_chat(
+                self.client,
+                self.model_name,
+                "",
+                prompt,
+                temperature=0.7,
+                max_output_tokens=1000,
             )
             
             tf_quiz = f"""
 ✓✗ TRUE/FALSE QUIZ: {topic}
 {'=' * 60}
 
-{response.text}
+{response_text}
 
 {'=' * 60}
 """
             return tf_quiz
-            
         except Exception as e:
             return f"Error generating T/F quiz: {e}"
