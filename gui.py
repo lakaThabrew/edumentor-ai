@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-
 def strip_markdown(text):
     """
     Convert markdown to plain text with nice formatting for display.
@@ -96,6 +95,7 @@ class EduMentorGUI:
         self.session_id = None
         self.is_initialized = False
         self.is_processing = False
+        self.is_ending_session = False  # Prevent multiple end session calls
         
         # Setup UI
         self._setup_styles()
@@ -179,13 +179,13 @@ class EduMentorGUI:
             width=20
         )
         self.student_entry.pack(side=tk.LEFT, padx=(5, 10))
-        self.student_entry.insert(0, "student")
+        self.student_entry.insert(0, "")
         
         self.connect_btn = tk.Button(
             student_frame,
             text="Start Session",
             command=self._start_session,
-            bg=self.button_color,
+            bg= "#15ee3d",
             fg=self.button_fg,
             font=("Segoe UI", 10, "bold"),
             relief=tk.FLAT,
@@ -193,6 +193,20 @@ class EduMentorGUI:
             pady=5
         )
         self.connect_btn.pack(side=tk.LEFT)
+        
+        # End Session button (initially hidden)
+        self.end_session_btn = tk.Button(
+            student_frame,
+            text="End Session 🛑",
+            command=self._end_session,
+            bg="#f80f0f",
+            fg="#1e1e2e",
+            font=("Segoe UI", 10, "bold"),
+            relief=tk.FLAT,
+            padx=15,
+            pady=5
+        )
+        # Don't pack yet - will show when session starts
         
         self.session_label = ttk.Label(
             student_frame,
@@ -225,10 +239,10 @@ class EduMentorGUI:
         self.chat_display.config(state=tk.DISABLED)
         
         # Configure tags for styling
-        self.chat_display.tag_configure("user", foreground="#a6e3a1", font=("Segoe UI", 11, "bold"))
-        self.chat_display.tag_configure("assistant", foreground="#89b4fa", font=("Segoe UI", 11, "bold"))
-        self.chat_display.tag_configure("system", foreground="#f9e2af", font=("Segoe UI", 10, "italic"))
-        self.chat_display.tag_configure("error", foreground="#f38ba8")
+        self.chat_display.tag_configure("user", foreground="#20e90d", font=("Segoe UI", 11, "bold"))
+        self.chat_display.tag_configure("assistant", foreground="#0f4baa", font=("Segoe UI", 11, "bold"))
+        self.chat_display.tag_configure("system", foreground="#eba819", font=("Segoe UI", 10, "italic"))
+        self.chat_display.tag_configure("error", foreground="#f41e5a")
     
     def _create_quick_actions(self, parent):
         """Create quick action buttons"""
@@ -280,7 +294,7 @@ class EduMentorGUI:
             input_frame,
             text="Send 📤",
             command=self._send_message,
-            bg=self.button_color,
+            bg= "#11dce3",
             fg=self.button_fg,
             font=("Segoe UI", 11, "bold"),
             relief=tk.FLAT,
@@ -306,7 +320,7 @@ class EduMentorGUI:
             status_frame,
             text="Exit ✕",
             command=self._on_exit,
-            bg="#f38ba8",
+            bg="#f70449",
             fg="#1e1e2e",
             font=("Segoe UI", 9, "bold"),
             relief=tk.FLAT,
@@ -319,7 +333,7 @@ class EduMentorGUI:
             status_frame,
             text="Clear Chat",
             command=self._clear_chat,
-            bg="#45475a",
+            bg="#0F0F10",
             fg=self.fg_color,
             font=("Segoe UI", 9),
             relief=tk.FLAT,
@@ -357,10 +371,10 @@ class EduMentorGUI:
             self._append_chat(
                 "🎓 Welcome to EduMentor AI!\n\n"
                 "I'm your personal learning assistant. I can help you with:\n"
-                "  📚 Understanding difficult concepts\n"
-                "  ✍️  Homework and problem-solving\n"
-                "  📝 Practice quizzes and exercises\n"
-                "  📊 Tracking your learning progress\n\n"
+                "  Understanding difficult concepts 📚\n"
+                "  Homework and problem-solving ✍️\n"
+                "  Practice quizzes and exercises 📝\n"
+                "  Tracking your learning progress 📊\n\n"
                 "Enter your Student ID above and click 'Start Session' to begin!",
                 "system"
             )
@@ -404,13 +418,86 @@ class EduMentorGUI:
             self.session_id = self.orchestrator.session_manager.get_current_session(self.student_id)
             
             self._update_status(f"✅ Session active for: {self.student_id}")
-            self.root.after(0, lambda: self.session_label.config(text=f"Session: {self.session_id[:8]}..."))
+            
+            # Update UI to show session is active
+            def show_session_ui():
+                self.session_label.config(text=f"Session: {self.session_id[:8]}...")
+                self.connect_btn.pack_forget()
+                self.end_session_btn.pack(side=tk.LEFT, padx=(5, 0))
+            
+            self.root.after(0, show_session_ui)
             
             self._append_chat(f"🎉 Session started for {self.student_id}!\n\nWhat would you like to learn today?", "system")
             
         except Exception as e:
             self._update_status(f"❌ Session error: {str(e)[:50]}", error=True)
             self._append_chat(f"Error starting session: {e}", "error")
+    
+    def _end_session(self):
+        """End the current session and reset UI for new session"""
+        # Multiple guards to prevent re-entry
+        if not self.session_id or self.is_ending_session:
+            return
+        
+        self.is_ending_session = True  # Lock to prevent re-entry
+        
+        # Immediately disable the button to prevent multiple clicks
+        self.end_session_btn.config(state=tk.DISABLED)
+        
+        # Prevent multiple calls - immediately clear session_id
+        current_session = self.session_id
+        current_student = self.student_id
+        self.session_id = None
+        self.student_id = None
+        
+        # Get session stats before ending
+        duration_min = 0
+        message_count = 0
+        
+        if self.orchestrator:
+            try:
+                stats = self.orchestrator.session_manager.get_session_stats(current_session)
+                if stats:
+                    duration_min = stats.get('duration_seconds', 0) / 60
+                    message_count = stats.get('message_count', 0)
+            except Exception:
+                pass
+        
+        # Build session summary message (use simple characters to avoid regex issues)
+        summary = (
+            "👋 Thank you for learning with EduMentor AI!\n"
+            f"📊 Session ended for: {current_student}\n"
+            "🌟 Keep learning and stay curious!\n"
+            "\n"
+            f"⏱️ Session duration: {duration_min:.5f} minutes\n"
+            f"💬 Total interactions: {message_count}"
+        )
+        
+        # Display in chat
+        self._append_chat(summary, "system")
+        
+        # Also print to console
+        print("\n" + "─" * 50)
+        print("👋 Thank you for learning with EduMentor AI!")
+        print(f"📊 Session ended for: {current_student}")
+        print("🌟 Keep learning and stay curious!")
+        print("─" * 50)
+        print(f"\n⏱️  Session duration: {duration_min:.1f} minutes")
+        print(f"💬 Total interactions: {message_count}\n")
+        
+        # Reset UI
+        def reset_ui():
+            self.student_entry.config(state=tk.NORMAL)
+            self.student_entry.delete(0, tk.END)
+            self.connect_btn.config(state=tk.NORMAL, text="Start Session")
+            self.end_session_btn.pack_forget()
+            self.end_session_btn.config(state=tk.NORMAL)  # Re-enable for next session
+            self.connect_btn.pack(side=tk.LEFT)
+            self.session_label.config(text="")
+            self.is_ending_session = False  # Reset flag for next session
+        
+        self.root.after(0, reset_ui)
+        self._update_status("✅ Ready - Enter your Student ID and click 'Start Session'")
     
     def _send_message(self):
         """Send a message"""
